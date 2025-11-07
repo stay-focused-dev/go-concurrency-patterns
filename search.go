@@ -7,9 +7,12 @@ import (
 )
 
 var (
-	Web   = fakeSearch("web")
-	Image = fakeSearch("image")
-	Video = fakeSearch("video")
+	Web1   = fakeSearch("web1")
+	Web2   = fakeSearch("web2")
+	Image1 = fakeSearch("image1")
+	Image2 = fakeSearch("image2")
+	Video1 = fakeSearch("video1")
+	Video2 = fakeSearch("video2")
 )
 
 type Result string
@@ -25,9 +28,9 @@ func fakeSearch(kind string) Search {
 func Google(query string) (results []Result) {
 	r := make(chan Result)
 
-	go func() { r <- Web(query) }()
-	go func() { r <- Image(query) }()
-	go func() { r <- Video(query) }()
+	go func() { r <- First(query, Web1, Web2) }()
+	go func() { r <- First(query, Image1, Image2) }()
+	go func() { r <- First(query, Video1, Video2) }()
 
 	timeout := time.After(80 * time.Millisecond)
 	for i := 0; i < 3; i++ {
@@ -40,6 +43,15 @@ func Google(query string) (results []Result) {
 		}
 	}
 	return
+}
+
+func First(query string, replicas ...Search) Result {
+	c := make(chan Result)
+	searchReplica := func(i int) { c <- replicas[i](query) }
+	for i := range replicas {
+		go searchReplica(i)
+	}
+	return <-c
 }
 
 func main() {
