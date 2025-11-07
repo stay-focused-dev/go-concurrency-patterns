@@ -17,12 +17,25 @@ func boring(msg string) <-chan string {
 	return c
 }
 
+func fanIn(input1, input2 <-chan string) <-chan string {
+	c := make(chan string)
+	go func() {
+		for {
+			c <- <-input1
+		}
+	}()
+	go func() {
+		for {
+			c <- <-input2
+		}
+	}()
+	return c
+}
+
 func main() {
-	joe := boring("Joe")
-	ann := boring("Ann")
-	for i := 0; i < 5; i++ {
-		fmt.Println(<-joe)
-		fmt.Println(<-ann)
+	c := fanIn(boring("Joe"), boring("Ann"))
+	for i := 0; i < 10; i++ {
+		fmt.Println(<-c)
 	}
 	fmt.Println("You're boring; I'm leaving.")
 }
