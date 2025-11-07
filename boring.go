@@ -21,21 +21,27 @@ func fanIn(input1, input2 <-chan string) <-chan string {
 	c := make(chan string)
 	go func() {
 		for {
-			c <- <-input1
-		}
-	}()
-	go func() {
-		for {
-			c <- <-input2
+			select {
+			case s := <-input1:
+				c <- s
+			case s := <-input2:
+				c <- s
+			}
 		}
 	}()
 	return c
 }
 
 func main() {
-	c := fanIn(boring("Joe"), boring("Ann"))
-	for i := 0; i < 10; i++ {
-		fmt.Println(<-c)
+	c := boring("Joe")
+	timeout := time.After(5 * time.Second)
+	for {
+		select {
+		case s := <-c:
+			fmt.Println(s)
+		case <-timeout:
+			fmt.Println("You're too slow.")
+			return
+		}
 	}
-	fmt.Println("You're boring; I'm leaving.")
 }
